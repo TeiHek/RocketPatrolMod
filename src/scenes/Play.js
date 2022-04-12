@@ -8,6 +8,7 @@ class Play extends Phaser.Scene {
     this.load.image('rocket', './assets/rocket.png');
     this.load.image('spaceship', './assets/spaceship.png');
     this.load.image('starfield', './assets/starfield.png');
+    this.load.image('smallship', './assets/smallship.png');
     // load spritesheet
     this.load.spritesheet('explosion', './assets/explosion.png', {frameWidth: 64, frameHeight: 32, startFrame: 0, endFrame: 9});
   }
@@ -25,9 +26,11 @@ class Play extends Phaser.Scene {
     // Add Rocket (P1)
     this.p1Rocket = new Rocket(this, game.config.width/2, game.config.height - borderUISize - borderPadding, 'rocket').setOrigin(0, 5, 0);
     // add spaceships (x3)
-    this.ship01 = new Spaceship(this, game.config.width + borderUISize*6, borderUISize*4, 'spaceship', 0, 30, 3).setOrigin(0, 0);
-    this.ship02 = new Spaceship(this, game.config.width + borderUISize*3, borderUISize*5 + borderPadding*2, 'spaceship', 0, 20, 2).setOrigin(0,0);
+    this.ship01 = new Spaceship(this, game.config.width + borderUISize*6, borderUISize*4 + borderPadding*2, 'spaceship', 0, 30, 3).setOrigin(0, 0);
+    this.ship02 = new Spaceship(this, game.config.width + borderUISize*3, borderUISize*5 + borderPadding*3, 'spaceship', 0, 20, 2).setOrigin(0,0);
     this.ship03 = new Spaceship(this, game.config.width, borderUISize*6 + borderPadding*4, 'spaceship', 0, 10, 1).setOrigin(0,0);
+    // add smallship (bonus point ship)
+    this.ship04 = new Spaceship(this, game.config.width, borderUISize*4, 'smallship', 0, 50, 5, 2);
     // Define keys
     keySPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
@@ -101,6 +104,7 @@ class Play extends Phaser.Scene {
       this.ship01.update();           // update spaceships (x3)
       this.ship02.update();
       this.ship03.update();
+      this.ship04.update();
     } 
     // check collisions
     if(this.checkCollision(this.p1Rocket, this.ship03)) {
@@ -121,7 +125,12 @@ class Play extends Phaser.Scene {
       this.timeRemaining += this.ship01.timeBonus;
       this.timerUI.text = this.timeRemaining;
     }
-
+    if (this.checkCollision(this.p1Rocket, this.ship04)) {
+      this.p1Rocket.reset();
+      this.shipExplode(this.ship04);
+      this.timeRemaining += this.ship04.timeBonus;
+      this.timerUI.text = this.timeRemaining;
+    }
   }
 
   checkCollision(rocket, ship) {

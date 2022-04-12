@@ -12,7 +12,6 @@ class Rocket extends Phaser.GameObjects.Sprite {
     }
 
     update() {
-        console.log(pointer)
         // L/R Movement
         if (!this.isFiring) {
             if (pointer.worldX < this.x && this.x >= borderUISize) {
