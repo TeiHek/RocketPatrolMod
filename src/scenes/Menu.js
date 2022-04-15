@@ -24,16 +24,18 @@ class Menu extends Phaser.Scene {
             },
             fixedWidth: 0
         }
-        // show menu text
-        this.add.text(game.config.width/2, game.config.height/2 - borderUISize - borderPadding, 'ROCKET PATROL', menuConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2, 'Use ←→ arrows to move & SPACE to fire', menuConfig).setOrigin(0.5);
-        menuConfig.backgroundColor = '#00FF00';
-        menuConfig.color = '#000';
-        this.add.text(game.config.width/2, game.config.height/2 + borderUISize + borderPadding, 'Press ← for Novice or → for Expert', menuConfig).setOrigin(0.5);
+      // show menu text
+      this.add.text(game.config.width/2, game.config.height/2 - borderUISize - borderPadding, 'ROCKET PATROL', menuConfig).setOrigin(0.5);
+      this.add.text(game.config.width/2, game.config.height/2, 'Use ←→ arrows to move & SPACE to fire', menuConfig).setOrigin(0.5);
+      menuConfig.backgroundColor = '#00FF00';
+      menuConfig.color = '#000';
+      this.add.text(game.config.width/2, game.config.height/2 + borderUISize + borderPadding, 'Press ← for Novice or → for Expert', menuConfig).setOrigin(0.5);
 
-        // define keys
-        keyLEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
-    keyRIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+      // define keys
+      keyLEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+      keyRIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+      keyUP =this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+      keyDOWN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
     }
 
     update() {
@@ -41,7 +43,8 @@ class Menu extends Phaser.Scene {
           // easy mode
           game.settings = {
             spaceshipSpeed: 3,
-            gameTimer: 60000    
+            gameTimer: 60000,
+            multiplayer: false
           }
           this.sound.play('sfx_select');
           this.scene.start('playScene');    
@@ -50,7 +53,29 @@ class Menu extends Phaser.Scene {
           // hard mode
           game.settings = {
             spaceshipSpeed: 4,
-            gameTimer: 45000    
+            gameTimer: 45000,
+            multiplayer: false
+          }
+          this.sound.play('sfx_select');
+          this.scene.start('playScene');    
+        }
+        // Multiplayer options
+        if (Phaser.Input.Keyboard.JustDown(keyUP)) {
+          // easy mode
+          game.settings = {
+            spaceshipSpeed: 3,
+            gameTimer: 60000,
+            multiplayer: true
+          }
+          this.sound.play('sfx_select');
+          this.scene.start('playScene');    
+        }
+        if (Phaser.Input.Keyboard.JustDown(keyDOWN)) {
+          // hard mode
+          game.settings = {
+            spaceshipSpeed: 4,
+            gameTimer: 45000,
+            multiplayer: true
           }
           this.sound.play('sfx_select');
           this.scene.start('playScene');    

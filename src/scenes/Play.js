@@ -11,6 +11,7 @@ class Play extends Phaser.Scene {
     this.load.image('smallship', './assets/smallship.png');
     // load spritesheet
     this.load.spritesheet('explosion', './assets/explosion.png', {frameWidth: 64, frameHeight: 32, startFrame: 0, endFrame: 9});
+    this.load.spritesheet('smallship-explosion', './assets/smallship-explosion.png', {frameWidth: 48, frameHeight: 22, startFrame: 0, endFrame: 7});
   }
 
   create() {
@@ -25,24 +26,35 @@ class Play extends Phaser.Scene {
     this.add.rectangle(game.config.width - borderUISize, 0, borderUISize, game.config.height, 0xFFFFFF).setOrigin(0, 0);
     // Add Rocket (P1)
     this.p1Rocket = new Rocket(this, game.config.width/2, game.config.height - borderUISize - borderPadding, 'rocket').setOrigin(0, 0);
+    // Set current player to P1's Rocket
+    this.currentPlayer = this.p1Rocket;
     // add spaceships (x3)
     this.ship01 = new Spaceship(this, game.config.width + borderUISize*6, borderUISize*4 + borderPadding*2, 'spaceship', 0, 30, 3).setOrigin(0, 0);
     this.ship02 = new Spaceship(this, game.config.width + borderUISize*3, borderUISize*5 + borderPadding*3, 'spaceship', 0, 20, 2).setOrigin(0,0);
     this.ship03 = new Spaceship(this, game.config.width, borderUISize*6 + borderPadding*4, 'spaceship', 0, 10, 1).setOrigin(0,0);
     // add smallship (bonus point ship)
-    this.ship04 = new Spaceship(this, game.config.width, borderUISize*4, 'smallship', 0, 50, 5, 2);
+    this.ship04 = new Spaceship(this, game.config.width, borderUISize*3 + borderPadding*2, 'smallship', 0, 50, 5, 2).setOrigin(0,0);
     // Define keys
-    keySPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    //keySPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     keyLEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     keyRIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
     pointer = this.input.activePointer;
     // animation config
+    // Spaceship explosion
     this.anims.create({
     key: 'explode',
     frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 9, first: 0}),
     frameRate: 30
     });
+    // Smallship explosion
+    this.anims.create({
+      key: 'smallexplode',
+      frames: this.anims.generateFrameNumbers('smallship-explosion', { start: 0, end: 7, first: 0}),
+      frameRate: 30
+    });
+    // Multiplayer flag, if single player = false, if multi = false only on 2P
+    this.swap = game.settings.multiplayer;
     // initialize score + time
     this.p1Score = 0;
     this.timeRemaining = game.settings.gameTimer/1000;  // Time in seconds
@@ -76,12 +88,16 @@ class Play extends Phaser.Scene {
     this.timerUI = this.add.text( game.config.width/2 - borderPadding*2, borderUISize + borderPadding*2, this.timeRemaining, TimerConfig);
     let timer = this.time.addEvent({ delay: 1000, callback: () => {
       if (this.timeRemaining > 0) {
-        this.timeRemaining -= 1;
+        this.timeRemaining -= 10;
         this.timerUI.text = this.timeRemaining;
       } else {
-        this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
-        this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
-        this.gameOver = true;
+        if(this.swap) {
+          this.readyPlayer2();
+        } else {
+          this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
+          this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
+          this.gameOver = true;
+        }
       }
     }, callbackScope: null, loop: true});
     // GAME OVER flag
@@ -92,42 +108,42 @@ class Play extends Phaser.Scene {
   
   update() {
     // check key input for restart
-    if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR)) {
+    if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR) && !this.swap) {
       this.scene.restart();
     }
-    if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyLEFT)) {
+    if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyLEFT) && !this.swap) {
       this.scene.start("menuScene");
     }
     this.starfield.tilePositionX -= 4;
     if (!this.gameOver) {               
-      this.p1Rocket.update();         // update rocket sprite
+      this.currentPlayer.update();         // update rocket sprite
       this.ship01.update();           // update spaceships (x3)
       this.ship02.update();
       this.ship03.update();
       this.ship04.update();
     } 
     // check collisions
-    if(this.checkCollision(this.p1Rocket, this.ship03)) {
-      this.p1Rocket.reset();
-      this.shipExplode(this.ship03);
+    if(this.checkCollision(this.currentPlayer, this.ship03)) {
+      this.currentPlayer.reset();
+      this.shipExplode(this.ship03, 'explode');
       this.timeRemaining += this.ship03.timeBonus;
       this.timerUI.text = this.timeRemaining;
     }
-    if (this.checkCollision(this.p1Rocket, this.ship02)) {
-      this.p1Rocket.reset();
-      this.shipExplode(this.ship02);
+    if (this.checkCollision(this.currentPlayer, this.ship02)) {
+      this.currentPlayer.reset();
+      this.shipExplode(this.ship02, 'explode');
       this.timeRemaining += this.ship02.timeBonus;
       this.timerUI.text = this.timeRemaining;
     }
-    if (this.checkCollision(this.p1Rocket, this.ship01)) {
-      this.p1Rocket.reset();
-      this.shipExplode(this.ship01);
+    if (this.checkCollision(this.currentPlayer, this.ship01)) {
+      this.currentPlayer.reset();
+      this.shipExplode(this.ship01, 'explode');
       this.timeRemaining += this.ship01.timeBonus;
       this.timerUI.text = this.timeRemaining;
     }
-    if (this.checkCollision(this.p1Rocket, this.ship04)) {
-      this.p1Rocket.reset();
-      this.shipExplode(this.ship04);
+    if (this.checkCollision(this.currentPlayer, this.ship04)) {
+      this.currentPlayer.reset();
+      this.shipExplode(this.ship04, 'smallexplode');
       this.timeRemaining += this.ship04.timeBonus;
       this.timerUI.text = this.timeRemaining;
     }
@@ -145,12 +161,12 @@ class Play extends Phaser.Scene {
     }
   }
 
-  shipExplode(ship) {
+  shipExplode(ship, anim) {
     // temporarily hide ship
     ship.alpha = 0;
     // create explosion sprite at ship's position
-    let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0, 0);
-    boom.anims.play('explode');             // play explode animation
+    let boom = this.add.sprite(ship.x, ship.y, anim).setOrigin(0, 0);
+    boom.anims.play(anim);             // play explode animation
     boom.on('animationcomplete', () => {    // callback after anim completes
       ship.reset();                         // reset ship position
       ship.alpha = 1;                       // make ship visible again
@@ -161,5 +177,24 @@ class Play extends Phaser.Scene {
     this.scoreLeft.text = this.p1Score;
     // Play explosion sfx
     this.sound.play('sfx_explosion');
+  }
+
+  readyPlayer2() {
+    // Reset ships
+    this.ship01.x = game.config.width + borderUISize*6;
+    this.ship02.x = game.config.width + borderUISize*3;
+    this.ship03.x =game.config.width;
+    this.ship04.x =game.config.width;
+    // Reset timer
+    this.timeRemaining = game.settings.gameTimer/1000;  // Time in seconds
+    // Add p2 rocket
+    this.p2Rocket = new Rocket(this, game.config.width/2, game.config.height - borderUISize - borderPadding, 'rocket').setOrigin(0, 0);
+    this.currentPlayer = this.p2Rocket
+    // Destroy p1Rocket
+    this.p1Rocket.destroy();
+    // Prompt Player 2 ready TODO
+    // Revert game over state
+    this.swap = false;
+    this.gameOver = false;
   }
 }
