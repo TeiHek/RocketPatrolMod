@@ -57,6 +57,7 @@ class Play extends Phaser.Scene {
     this.swap = game.settings.multiplayer;
     // initialize score + time
     this.p1Score = 0;
+    this.currentScore = this.p1Score
     this.timeRemaining = game.settings.gameTimer/1000;  // Time in seconds
     // display score
     let scoreConfig = {
@@ -72,6 +73,11 @@ class Play extends Phaser.Scene {
       fixedWidth: 100
     };
     this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2, this.p1Score, scoreConfig);
+    this.scorePosition = this.scoreLeft;
+    if(game.settings.multiplayer) {
+      this.p2Score = 0;
+      this.scoreRight = this.add.text(config.width/2 + borderUISize*6 - borderUISize/2, borderUISize + borderPadding*2, this.p2Score, scoreConfig);
+    }
     // Game Timer
     let TimerConfig = {
       fontFamily: 'Courier',
@@ -86,13 +92,14 @@ class Play extends Phaser.Scene {
       fixedWidth: 50
     };
     this.timerUI = this.add.text( game.config.width/2 - borderPadding*2, borderUISize + borderPadding*2, this.timeRemaining, TimerConfig);
-    let timer = this.time.addEvent({ delay: 1000, callback: () => {
+    this.gameTimer = this.time.addEvent({ delay: 1000, callback: () => {
       if (this.timeRemaining > 0) {
-        this.timeRemaining -= 10;
+        this.timeRemaining -= 1;
         this.timerUI.text = this.timeRemaining;
       } else {
         if(this.swap) {
           this.readyPlayer2();
+          this.gameOver = true;
         } else {
           this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
           this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
@@ -173,28 +180,53 @@ class Play extends Phaser.Scene {
       boom.destroy();                       // remove explosion sprite
     });
     // Score add and repaint
-    this.p1Score += ship.points;
-    this.scoreLeft.text = this.p1Score;
+    this.currentScore += ship.points;
+    this.scorePosition.text = this.currentScore;
     // Play explosion sfx
     this.sound.play('sfx_explosion');
   }
 
   readyPlayer2() {
+    // Pause game timer
+    this.gameTimer.paused = true
     // Reset ships
     this.ship01.x = game.config.width + borderUISize*6;
     this.ship02.x = game.config.width + borderUISize*3;
     this.ship03.x =game.config.width;
     this.ship04.x =game.config.width;
-    // Reset timer
+    //Track P2's score
+    this.currentScore = this.p2Score;
+    this.scorePosition = this.scoreRight;
+    // Reset timer for P2
     this.timeRemaining = game.settings.gameTimer/1000;  // Time in seconds
     // Add p2 rocket
     this.p2Rocket = new Rocket(this, game.config.width/2, game.config.height - borderUISize - borderPadding, 'rocket').setOrigin(0, 0);
     this.currentPlayer = this.p2Rocket
     // Destroy p1Rocket
     this.p1Rocket.destroy();
-    // Prompt Player 2 ready TODO
-    // Revert game over state
-    this.swap = false;
-    this.gameOver = false;
+    // Prompt Player 2 ready
+    let promptConfig = {
+      fontFamily: 'Courier',
+      fontSize: '28px',
+      backgroundColor: '#F3B141',
+      color: '#843605',
+      align: 'center',
+      padding: {
+        top: 5,
+        bottom: 5,
+      },
+      fixedWidth: 275
+    };
+    this.p2Prompt = this.add.text(game.config.width/2, game.config.height/2, 'PLAYER 2 READY', promptConfig).setOrigin(0.5);
+    let timer = this.time.delayedCall(3000, () => {
+      // Destroy text prompt
+      this.p2Prompt.destroy();
+      // Revert game over state
+      this.swap = false;
+      this.gameOver = false;
+      // Resume timer
+      this.gameTimer.paused = false;
+    }, null, this);
+    
   }
 }
