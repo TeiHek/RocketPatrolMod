@@ -91,16 +91,22 @@ class Play extends Phaser.Scene {
       },
       fixedWidth: 50
     };
-    this.timerUI = this.add.text( game.config.width/2 - borderPadding*2, borderUISize + borderPadding*2, this.timeRemaining, TimerConfig);
+    this.timerUI = this.add.text( game.config.width/2 - borderPadding*6, borderUISize + borderPadding*2, this.timeRemaining, TimerConfig);
     this.gameTimer = this.time.addEvent({ delay: 1000, callback: () => {
       if (this.timeRemaining > 0) {
         this.timeRemaining -= 1;
         this.timerUI.text = this.timeRemaining;
       } else {
         if(this.swap) {
-          this.readyPlayer2();
+          // Set game over state
           this.gameOver = true;
+          // Check high score
+          if(this.currentScore > highScore) highScore = this.currentScore;
+          this.readyPlayer2();
         } else {
+          // Check high score
+          if(this.currentScore > highScore) highScore = this.currentScore;
+          // Show game over text
           this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
           this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
           this.gameOver = true;
@@ -109,11 +115,14 @@ class Play extends Phaser.Scene {
     }, callbackScope: null, loop: true});
     // GAME OVER flag
     this.gameOver = false;
-    // Play clock, Time based on settings
     scoreConfig.fixedWidth = 0;
+    // Fire text
+    this.fireUI = this.add.text( game.config.width/2 + borderPadding, borderUISize + borderPadding*2, "FIRE", scoreConfig);
   }
   
   update() {
+    // Show FIRE text while able to fire
+    this.fireUI.visible = this.currentPlayer.isFiring;
     // check key input for restart
     if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR) && !this.swap) {
       this.scene.restart();
@@ -192,8 +201,8 @@ class Play extends Phaser.Scene {
     // Reset ships
     this.ship01.x = game.config.width + borderUISize*6;
     this.ship02.x = game.config.width + borderUISize*3;
-    this.ship03.x =game.config.width;
-    this.ship04.x =game.config.width;
+    this.ship03.x = game.config.width;
+    this.ship04.x = game.config.width;
     //Track P2's score
     this.currentScore = this.p2Score;
     this.scorePosition = this.scoreRight;
